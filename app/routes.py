@@ -3,7 +3,6 @@ from typing import Annotated
 from uuid import uuid4
 
 from fastapi import APIRouter, Form, Request, Response
-from jinja2_fragments.fastapi import Jinja2Blocks
 from markdown2 import (  # pyright: ignore[reportMissingTypeStubs]
     markdown,  # pyright: ignore[reportMissingTypeStubs, reportUnknownVariableType]
 )
@@ -15,7 +14,6 @@ from app.chat import Chat
 
 settings = Settings()
 
-templates = Jinja2Blocks(settings.TEMPLATE_DIR)
 router = APIRouter()
 
 
