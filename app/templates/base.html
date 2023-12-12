@@ -13,7 +13,7 @@
 
 <body>
 
-  <div class="container-md">
+  <div class="container">
     <h2>Jarvis</h2>
     <div>
       <div id="chat"></div>
@@ -21,8 +21,8 @@
         <div class="loader"></div>
       </div>
       <div class="row align-items-center">
-        <div class="col-11"><textarea id="question" name="question" placeholder="Chat to Jarvis ..."></textarea></div>
-        <div class="col-1"><button name="message-btn" class="btn btn-primary" hx-post="/message" hx-target="#chat"
+        <div class="col-12 col-sm-11"><textarea id="question" name="question" placeholder="Chat to Jarvis ..."></textarea></div>
+        <div class="col-12 col-sm-1"><button name="message-btn" class="btn btn-primary" hx-post="/message" hx-target="#chat"
             hx-include="#question" hx-swap="beforeend" hx-indicator="#spinner">Send</button></div>
       </div>
     </div>
