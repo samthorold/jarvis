@@ -1,6 +1,7 @@
+import asyncio
 import json
 from pathlib import Path
-from typing import Iterable, Self
+from typing import AsyncIterable, Iterable, Self
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam as ChatMsg
@@ -64,7 +65,7 @@ class Chat(BaseModel):
 
         return content
 
-    def stream(self, msg: str) -> Iterable[str]:
+    async def stream(self, msg: str) -> AsyncIterable[str]:
         user_msg: ChatMsg = {"role": "user", "content": msg}
         self.messages.append(user_msg)
 
@@ -84,13 +85,17 @@ class Chat(BaseModel):
         self.messages.append(assistant_msg)
 
 
-if __name__ == "__main__":
-    chat = Chat(client=OpenAI())
+async def main(chat: Chat):
     while True:
         msg = input("Qu: ")
         if msg in ["q", "Q"]:
             break
-        for tk in chat.stream(msg):
+        async for tk in chat.stream(msg):
             print(tk, end="", flush=True)
         # print(chat.chat(msg))
         print()
+
+
+if __name__ == "__main__":
+    chat = Chat(client=OpenAI())
+    asyncio.run(main(chat))

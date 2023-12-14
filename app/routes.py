@@ -1,11 +1,10 @@
+import asyncio
 from pathlib import Path
 from typing import Annotated
 from uuid import uuid4
 
-from fastapi import APIRouter, Form, Request, Response
-from markdown2 import (  # pyright: ignore[reportMissingTypeStubs]
-    markdown,  # pyright: ignore[reportMissingTypeStubs, reportUnknownVariableType]
-)
+from fastapi import APIRouter, Form, Request, Response, WebSocket, WebSocketDisconnect
+from markdown2 import markdown  # pyright: ignore
 from openai import OpenAI
 
 from app.config import Settings
@@ -63,3 +62,48 @@ def message(request: Request, question: Annotated[str, Form()]):
             answer, extras=["fenced-code-blocks"]
         ),  # pyright: ignore[reportUnknownArgumentType]
     )
+
+
+@router.websocket("/stream")
+async def stream(ws: WebSocket):
+    chat = Chat(client=OpenAI())
+    await ws.accept()
+    try:
+        while True:
+            text = await ws.receive_json()
+            qu = text.get("question")
+            if not qu:
+                raise RuntimeError("Something has gone wrong here. No 'question' key.")
+            qu_html = markdown(qu, extras=["fenced-code-blocks"])  # pyright: ignore
+            await asyncio.sleep(0)
+            await ws.send_text(
+                '<div id="chat" hx-swap-oob="beforeend">'
+                f'<div class="user-msg">{qu_html}</div></div>'
+            )
+            await asyncio.sleep(0)
+            await ws.send_text(
+                '<input id="question" name="question" type="text" class="form-control"'
+                ' placeholder="Chat to Jarvis ..." hx-swap-oob="true"></input>'
+            )
+            await asyncio.sleep(0)
+            cumulative_tokens = tokens_html = ""
+            async for tk in chat.stream(qu):
+                cumulative_tokens += tk
+                tokens_html = markdown(  # pyright: ignore
+                    cumulative_tokens,
+                    extras=["fenced-code-blocks"],
+                )
+                await asyncio.sleep(0)
+                await ws.send_text(
+                    '<div id="tokens" hx-swap-oob="true">'
+                    f'<div class="assistant-msg">{tokens_html}</div></div>'
+                )
+            await asyncio.sleep(0)
+            await ws.send_text(
+                '<div id="chat" hx-swap-oob="beforeend">'
+                f'<div class="assistant-msg">{tokens_html}</div></div>'
+            )
+            await asyncio.sleep(0)
+            await ws.send_text(f'<div id="tokens" hx-swap-oob="true"></div>')
+    except WebSocketDisconnect:
+        print("Disconnected.")

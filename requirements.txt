@@ -3,4 +3,4 @@ markdown2[all]
 openai
 pydantic_settings
 python-multipart
-uvicorn
+uvicorn[standard]
