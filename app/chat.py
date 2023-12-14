@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Self
+from typing import Iterable, Self
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam as ChatMsg
@@ -64,6 +64,25 @@ class Chat(BaseModel):
 
         return content
 
+    def stream(self, msg: str) -> Iterable[str]:
+        user_msg: ChatMsg = {"role": "user", "content": msg}
+        self.messages.append(user_msg)
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=self.messages,
+            stream=True,
+        )
+
+        content = ""
+        for chunk in response:
+            if chunk and (chunk_content := chunk.choices[0].delta.content):
+                yield chunk_content
+                content += chunk_content
+
+        assistant_msg: ChatMsg = {"role": "assistant", "content": content}
+        self.messages.append(assistant_msg)
+
 
 if __name__ == "__main__":
     chat = Chat(client=OpenAI())
@@ -71,5 +90,7 @@ if __name__ == "__main__":
         msg = input("Qu: ")
         if msg in ["q", "Q"]:
             break
-        print(chat.chat(msg))
+        for tk in chat.stream(msg):
+            print(tk, end="", flush=True)
+        # print(chat.chat(msg))
         print()
